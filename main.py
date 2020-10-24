@@ -40,6 +40,44 @@ def redo(event=None):
     content_text.event_generate("<<Redo>>")
     return 'break'
 
+def selectall(event=None):
+    content_text.tag_add('sel','1.0','end')
+    return 'break'
+
+def find_text(event=None):
+    search_toplevel=tk.Toplevel(root)
+    search_toplevel.title('Find Text')
+    search_toplevel.transient(root)
+    search_toplevel.resizable(False,False)
+    tk.Label(search_toplevel,text="Find All:").grid(row=0,column=0,sticky='e')
+    search_entry_widget=tk.Entry(search_toplevel,width=25)
+    search_entry_widget.grid(row=0,column=1,padx=2,pady=2,sticky='we')
+    search_entry_widget.focus_set()
+    ignore_case_value=tk.IntVar()
+    tk.Checkbutton(search_toplevel,text="Ignore Case",variable=ignore_case_value).grid(row=1,column=1,sticky='e',padx=2,pady=2)
+    tk.Button(search_toplevel,text="Find ALL",underline=0,command=lambda:search_output(search_entry_widget.get(),ignore_case_value.get(),content_text,search_toplevel,search_entry_widget)).grid(row=0,column=2,sticky='e'+'w',padx=2,pady=2)
+    def close_search_window():
+        content_text.tag_remove('match','1.0',tk.END)
+        search_toplevel.destroy()
+    search_toplevel.protocol('WM_DELETE_WINDOW',close_search_window)
+    return 'break'
+
+def search_output(needle,if_ignore_case,content_text,search_toplevel,search_box):
+    content_text.tag_remove('match','1.0',tk.END)
+    matches_found=0
+    if needle:
+        start_pos='1.0'
+        while True:
+            start_pos=content_text.search(needle,start_pos,nocase=if_ignore_case,stopindex=tk.END)
+            if not start_pos:
+                break
+            end_pos='{}+{}c'.format(start_pos,len(needle))
+            content_text.tag_add('match',start_pos,end_pos)
+            matches_found+=1
+            start_pos=end_pos
+        content_text.tag_config('match',foreground='red',background='yellow')
+    search_box.focus_set()
+    search_toplevel.title('{} matches found'.format(matches_found))
 # Making Menu Bar
 menu_bar = tk.Menu(root)
 # Making File Menu
@@ -65,8 +103,8 @@ edit_menu.add_separator()
 edit_menu.add_command(label="Cut", accelerator='Ctrl+X', compound='left', image=cut_icon,command=cut)
 edit_menu.add_command(label="Copy", accelerator='Ctrl+C', compound='left', image=copy_icon,command=copy)
 edit_menu.add_command(label="Paste", accelerator='Ctrl+V', compound='left', image=paste_icon,command=paste)
-edit_menu.add_command(label="Find", accelerator='Ctrl+F', underline=0)
-edit_menu.add_command(label="SelectAll", accelerator='Ctrl+A', underline=7)
+edit_menu.add_command(label="Find", accelerator='Ctrl+F', underline=0,command=find_text)
+edit_menu.add_command(label="SelectAll", accelerator='Ctrl+A', underline=7,command=selectall)
 # Cascading Edit Menu in the Menu Bar
 menu_bar.add_cascade(label="Edit", menu=edit_menu)
 
@@ -138,6 +176,10 @@ scroll_bar.pack(side="right", fill='y')
 #Handling Shortcuts
 content_text.bind('<Control-y>',redo)
 content_text.bind('<Control-Y>',redo)
+content_text.bind('<Control-A>',selectall)
+content_text.bind('<Control-a>',selectall)
+content_text.bind('<Control-F>',find_text)
+content_text.bind('<Control-f>',find_text)
 
 # main Loop
 root.mainloop()
