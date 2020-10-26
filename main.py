@@ -180,8 +180,22 @@ def update_line_numbers(event=None):
     linenumber_bar.insert('1.0',line_numbers)
     linenumber_bar.config(state='disabled')
 
+def show_cursor_info_fun():
+    if show_cursor_info.get():
+        cursor_info_bar.pack(expand=tk.NO,fill=None,side=tk.RIGHT,anchor='se')
+    else:
+        cursor_info_bar.pack_forget()
+
+def update_cursorinfo_bar(event=None):
+    row,col=content_text.index(tk.INSERT).split('.')
+    line_num,col_num=str(int(row)),str(int(col)+1)
+    infotext="Line: {0} | Column: {1}".format(line_num,col_num)
+    cursor_info_bar.config(text=infotext)
+
 def on_content_changed(event=None):
     update_line_numbers()
+    update_cursorinfo_bar()
+
 
 
 
@@ -199,6 +213,12 @@ def toogle_highlight(event=None):
         highlight_line()
     else:
         undo_highlight()
+
+def changetheme(event=None):
+    selected_theme=theme_choice.get()
+    fg_bg_colors=color_schemes.get(selected_theme)
+    fgc,bgc=fg_bg_colors.split('.')
+    content_text.config(fg=fgc,bg=bgc)
 
 # --------------------------------------------------------------------------------------
 
@@ -242,7 +262,7 @@ show_line_number.set(1)
 view_menu.add_checkbutton(label="Show Line Numbers", variable=show_line_number)
 show_cursor_info = tk.IntVar()
 show_cursor_info.set(1)
-view_menu.add_checkbutton(label="Show Cursor Location At bottom", variable=show_cursor_info)
+view_menu.add_checkbutton(label="Show Cursor Location At bottom", variable=show_cursor_info,command=show_cursor_info_fun)
 to_highlight_line = tk.BooleanVar()
 view_menu.add_checkbutton(label="Highlight Current Line", onvalue=1, offvalue=0, variable=to_highlight_line,command=toogle_highlight)
 # Making Themes Menu is View menu
@@ -267,7 +287,7 @@ color_schemes = {
 theme_choice = tk.StringVar()
 theme_choice.set('Default')
 for k in sorted(color_schemes):
-    themes_menu.add_radiobutton(label=k, variable=theme_choice)
+    themes_menu.add_radiobutton(label=k, variable=theme_choice,command=changetheme)
 # Cascading VIew Menu in the Menu Bar
 menu_bar.add_cascade(label="View", menu=view_menu)
 
@@ -308,13 +328,17 @@ linenumber_bar.pack(side='left', fill='y')
 # Adding Text area
 content_text = tk.Text(root, wrap='word', undo=1)
 content_text.pack(expand='yes', fill='both')
-# --------------------------------------------------------------------------------------
 
+# --------------------------------------------------------------------------------------
 # Adding ScrollBar
 scroll_bar = tk.Scrollbar(content_text)
 content_text.configure(yscrollcommand=scroll_bar.set)
 scroll_bar.config(command=content_text.yview)
 scroll_bar.pack(side="right", fill='y')
+# --------------------------------------------------------------------------------------
+#Adding cursor Info Bar
+cursor_info_bar=tk.Label(content_text,text="Line: 1 || Column: 1")
+cursor_info_bar.pack(expand=tk.NO,fill=None,side=tk.RIGHT,anchor='se')
 # --------------------------------------------------------------------------------------
 
 # Handling Shortcuts
@@ -336,5 +360,6 @@ content_text.bind('<Alt-F4>',exit_box)
 content_text.tag_configure('active_line', background='lightyellow')
 # --------------------------------------------------------------------------------------
 new_file()
+root.protocol('WM_DELETE_WINDOW', exit_box)
 # main Loop
 root.mainloop()
