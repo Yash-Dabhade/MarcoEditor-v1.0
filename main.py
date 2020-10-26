@@ -163,6 +163,43 @@ def about_box(event=None):
 def exit_box(event=None):
     if tk.messagebox.askokcancel("Really Quit?","DO YOU WANT TO EXIT ?"):
         root.destroy()
+
+
+def get_line_numbers():
+    output=""
+    if show_line_number.get():
+        row,col=content_text.index('end').split('.')
+        for i in range(1,int(row)):
+            output+=str(i)+'\n'
+    return output
+
+def update_line_numbers(event=None):
+    line_numbers=get_line_numbers()
+    linenumber_bar.config(state='normal')
+    linenumber_bar.delete('1.0','end')
+    linenumber_bar.insert('1.0',line_numbers)
+    linenumber_bar.config(state='disabled')
+
+def on_content_changed(event=None):
+    update_line_numbers()
+
+
+
+def highlight_line(interval=100):
+    content_text.tag_remove("active_line",1.0,"end")
+    content_text.tag_add('active_line','insert linestart','insert lineend+1c')
+    content_text.after(interval,toogle_highlight)
+
+def undo_highlight():
+    content_text.tag_remove("active_line",1.0,'end')
+
+
+def toogle_highlight(event=None):
+    if to_highlight_line.get():
+        highlight_line()
+    else:
+        undo_highlight()
+
 # --------------------------------------------------------------------------------------
 
 # Making Menu Bar
@@ -206,8 +243,8 @@ view_menu.add_checkbutton(label="Show Line Numbers", variable=show_line_number)
 show_cursor_info = tk.IntVar()
 show_cursor_info.set(1)
 view_menu.add_checkbutton(label="Show Cursor Location At bottom", variable=show_cursor_info)
-highlight_line = tk.IntVar()
-view_menu.add_checkbutton(label="Highlight Current Line", onvalue=1, offvalue=0, variable=highlight_line)
+to_highlight_line = tk.BooleanVar()
+view_menu.add_checkbutton(label="Highlight Current Line", onvalue=1, offvalue=0, variable=to_highlight_line,command=toogle_highlight)
 # Making Themes Menu is View menu
 # --------------------------------------------------------------------------------------
 themes_menu = tk.Menu(view_menu, tearoff=0)
@@ -263,7 +300,7 @@ for i,icon in enumerate(icons):
 # --------------------------------------------------------------------------------------
 
 # MakingLineNumberBar
-linenumber_bar = tk.Text(root, width=4, padx=3, takefocus=0, border=0, background='khaki', state='disabled',
+linenumber_bar = tk.Text(root, width=4, padx=3, takefocus=0, border=0, background='lightblue', state='disabled',
                          wrap='none')
 linenumber_bar.pack(side='left', fill='y')
 # --------------------------------------------------------------------------------------
@@ -293,7 +330,10 @@ content_text.bind('<Control-S>', save)
 content_text.bind('<Control-s>', save)
 content_text.bind('<Control-N>', new_file)
 content_text.bind('<Control-n>', new_file)
-
+content_text.bind('<Any-KeyPress>',on_content_changed)
+content_text.bind('<Alt-F4>',exit_box)
+#Deffining active line
+content_text.tag_configure('active_line', background='lightyellow')
 # --------------------------------------------------------------------------------------
 new_file()
 # main Loop
